@@ -15,7 +15,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1'
-        classpath 'com.github.lburgazzoli:lb-karaf-features-gen:1.0.0.SNAPSHOT'
+//        classpath 'com.github.lburgazzoli:lb-karaf-features-gen:1.0.0.SNAPSHOT'
     }
 }
 
@@ -36,6 +36,7 @@ repositories {
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 version = '1.0'
 
@@ -142,3 +143,5 @@ idea {
 		downloadSources = true
 	}
 }
+
+

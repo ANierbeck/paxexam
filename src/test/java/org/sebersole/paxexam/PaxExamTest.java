@@ -1,21 +1,28 @@
 package org.sebersole.paxexam;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.repositories;
+import static org.ops4j.pax.exam.CoreOptions.repository;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.karafDistributionConfiguration;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+
 import javax.inject.Inject;
 
+import org.apache.karaf.features.BootFinished;
+import org.apache.karaf.features.FeaturesService;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceReference;
-
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.ProbeBuilder;
@@ -23,17 +30,9 @@ import org.ops4j.pax.exam.TestProbeBuilder;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.ops4j.pax.exam.CoreOptions.maven;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.repositories;
-import static org.ops4j.pax.exam.CoreOptions.repository;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.debugConfiguration;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.karafDistributionConfiguration;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 
 /**
  * @author Steve Ebersole
@@ -59,11 +58,11 @@ public class PaxExamTest {
 								.id( "jboss-nexus" )
 								.allowSnapshots()
 				),
-				features( featureXmlUrl(), "hibernate-native", "hibernate-jpa" ),
+				features( featureXmlUrl(), "hibernate-jpa" ),
 				features( testingFeatureXmlUrl(), "hibernate-osgi-testing" )
 		);
 	}
-
+	
 	private static Properties loadPaxExamEnvironmentProperties() throws IOException {
 		Properties props = new Properties();
 		props.load( PaxExamTest.class.getResourceAsStream( "/pax-exam-environment.properties" ) );
@@ -121,6 +120,19 @@ public class PaxExamTest {
 	@Inject
 	@SuppressWarnings("UnusedDeclaration")
 	private BundleContext bundleContext;
+	
+	
+	@Inject
+	protected FeaturesService featuresService;
+
+	@Inject
+	BootFinished bootFinished;
+
+
+	@Test
+	public void test() throws Exception {
+		assertTrue(featuresService.isInstalled(featuresService.getFeature("hibernate-jpa")));
+	}
 
 //	@Test
 //	public void test() throws Exception {
@@ -131,6 +143,7 @@ public class PaxExamTest {
 //	}
 
 	@Test
+	@Ignore
 	public void testNative() throws Exception {
 		// This line causes our OsgiSessionFactoryService to execute, and it *seems* to build properly.
 		//		I say "seems" because the debugger does some strange things and I cannot step into
