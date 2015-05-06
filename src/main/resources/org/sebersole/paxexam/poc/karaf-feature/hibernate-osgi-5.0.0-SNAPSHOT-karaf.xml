@@ -1,6 +1,6 @@
 <features name="hibernate-orm-karaf-feature-repository" xmlns="http://karaf.apache.org/xmlns/features/v1.2.1">
 
-  <repository>mvn:org.apache.karaf.features/enterprise/4.0.0-SNAPSHOT/xml/features</repository>
+  <repository>mvn:org.apache.karaf.features/enterprise/3.0.3/xml/features</repository>
 
   <feature name='hibernate-native' version='5.0.0-SNAPSHOT'>
     <bundle>mvn:org.apache.logging.log4j/log4j-api/2.0</bundle>
