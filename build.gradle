@@ -35,6 +35,7 @@ repositories {
 }
 
 apply plugin: 'java'
+apply plugin: 'idea'
 
 version = '1.0'
 
@@ -47,16 +48,23 @@ sourceSets {
     }
 }
 
+configurations {
+	karafDistro {
+		description = 'Configuration used to isolate the dependency on the Karaf distro'
+		transitive = false
+	}
+}
+
+ext {
+	// MUST use 4.3.1!  4.3.0 was compiled with "-target jsr14".
+	// http://blog.osgi.org/2012/10/43-companion-code-for-java-7.html
+	osgiCoreVersion = '4.3.1'
+	karafVersion = '3.0.3'
+	paxExamVersion = '4.4.0'
+	paxUrlVersion = '2.4.1'
+}
 
 dependencies {
-    ext {
-        // MUST use 4.3.1!  4.3.0 was compiled with "-target jsr14".
-        // http://blog.osgi.org/2012/10/43-companion-code-for-java-7.html
-        osgiCoreVersion = '4.3.1'
-        karafVersion = '3.0.3'
-        paxExamVersion = '4.4.0'
-        paxUrlVersion = '2.4.1'
-    }
 
     compile "org.osgi:org.osgi.core:${osgiCoreVersion}"
     compile "org.osgi:org.osgi.compendium:${osgiCoreVersion}"
@@ -64,10 +72,20 @@ dependencies {
     testCompile "org.ops4j.pax.exam:pax-exam:${paxExamVersion}"
     testCompile "org.ops4j.pax.exam:pax-exam-junit4:${paxExamVersion}"
     testCompile "org.ops4j.pax.exam:pax-exam-container-karaf:${paxExamVersion}"
+    // Need this explicitly in order to use @Inject -> shouldn't this be a transtive dep of pax-exam?
+    //      is there ever a pax exam test that *does not* use this?
 	testCompile 'javax.inject:javax.inject:1'
 
-    testRuntime "org.apache.karaf:apache-karaf:${karafVersion}@tar.gz"
-    testRuntime "org.ops4j.pax.url:pax-url-aether:${paxUrlVersion}"
+	karafDistro "org.apache.karaf:apache-karaf:${karafVersion}@tar.gz"
+
+	testRuntime( "org.apache.karaf:apache-karaf:${karafVersion}" ) {
+		// having trouble finding this one locally
+		exclude group: 'org.eclipse', module: 'org.eclipse.osgi'
+	}
+
+    // Starting the Karaf container needs this.  Again, no idea why this would not be a
+    //      provided dep already
+//    testRuntime "org.ops4j.pax.url:pax-url-aether:${paxUrlVersion}"
 
     // in my experience these are needed too...
     testRuntime "org.slf4j:slf4j-api:1.7.5"
@@ -78,4 +96,49 @@ dependencies {
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     testCompile 'org.hibernate:hibernate-entitymanager:5.0.0-SNAPSHOT'
+    testCompile 'org.hibernate:hibernate-osgi:5.0.0-SNAPSHOT'
+}
+
+task generatePaxExamEnvironmentFile {
+	// I found this better/easier than duplicating information...
+	description = 'Generates a Properties file that the Pax Exam test can access to know information about the test environment'
+
+	File outputFile = new File( sourceSets.test.output.resourcesDir, 'pax-exam-environment.properties' )
+	File karafUnpackDirectory = file( "${buildDir}/karaf-unpack" )
+
+	// set up up-to-date checks
+	inputs.files( configurations.testRuntime )
+	inputs.property( 'karafUnpackDirectory', karafUnpackDirectory )
+	outputs.file( outputFile )
+
+	doFirst {
+		// should only be one artifacts..
+		File karafDistroFile = configurations.karafDistro.resolvedConfiguration.resolvedArtifacts[0].file
+
+		Properties properties = new Properties();
+		properties.setProperty( 'org.ops4j.pax.exam.container.karaf.distroUrl', karafDistroFile.toURI().toURL().toExternalForm() )
+		properties.setProperty( 'org.ops4j.pax.exam.container.karaf.unpackDir', karafUnpackDirectory.absolutePath )
+		properties.setProperty( 'org.ops4j.pax.exam.container.karaf.version', karafVersion as String )
+		properties.setProperty( 'org.ops4j.pax.exam.container.karaf.probe.classesDir', sourceSets.test.output.classesDir.absolutePath )
+		properties.setProperty( 'org.ops4j.pax.exam.container.karaf.probe.resourcesDir', sourceSets.test.output.resourcesDir.absolutePath )
+
+		outputFile.parentFile.mkdirs()
+
+		FileOutputStream outputStream = new FileOutputStream( outputFile );
+		try {
+			properties.store( outputStream, "Generated from Gradle by Hibernate build for PaxExam testing of hibernate-osgi module" )
+		}
+		finally {
+			outputStream.close()
+		}
+	}
+}
+
+tasks.test.dependsOn tasks.generatePaxExamEnvironmentFile
+//tasks.test.classpath += configurations.karaf
+
+idea {
+	module {
+		downloadSources = true
+	}
 }
