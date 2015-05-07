@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -16,6 +17,8 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
+import org.apache.karaf.features.BootFinished;
+import org.apache.karaf.features.FeaturesService;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.ProbeBuilder;
@@ -27,6 +30,7 @@ import org.ops4j.pax.exam.spi.reactors.PerClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.repositories;
@@ -47,20 +51,21 @@ public class PaxExamTest {
 		Properties paxExamEnvironment = loadPaxExamEnvironmentProperties();
 
 		return options(
-//				debugConfiguration( "5005", true ),
 				karafDistributionConfiguration()
 						.frameworkUrl( paxExamEnvironment.getProperty( "org.ops4j.pax.exam.container.karaf.distroUrl" ) )
 						.karafVersion( paxExamEnvironment.getProperty( "org.ops4j.pax.exam.container.karaf.version" ) )
 						.name( "Apache Karaf" )
 						.unpackDirectory( new File( paxExamEnvironment.getProperty( "org.ops4j.pax.exam.container.karaf.unpackDir" ) ) )
-						.useDeployFolder( false ),
-				repositories(
+						.useDeployFolder( false )
+//				,debugConfiguration( "5005", true )
+				, repositories(
 						repository( "https://repository.jboss.org/nexus/content/groups/public-jboss/" )
 								.id( "jboss-nexus" )
 								.allowSnapshots()
-				),
-				features( featureXmlUrl(), "hibernate-native", "hibernate-jpa" ),
-				features( testingFeatureXmlUrl(), "hibernate-osgi-testing" )
+				)
+//				, features( featureXmlUrl(), "hibernate-native", "hibernate-jpa" )
+				, features( featureXmlUrl(), "hibernate-native" )
+				, features( testingFeatureXmlUrl(), "hibernate-osgi-testing" )
 		);
 	}
 
@@ -130,7 +135,20 @@ public class PaxExamTest {
 //		}
 //	}
 
+	@Inject
+	protected FeaturesService featuresService;
+
+	@Inject
+	BootFinished bootFinished;
+
+
 	@Test
+	public void test() throws Exception {
+		assertTrue(featuresService.isInstalled(featuresService.getFeature("hibernate-native")));
+	}
+
+	@Test
+//	@Ignore
 	public void testNative() throws Exception {
 		// This line causes our OsgiSessionFactoryService to execute, and it *seems* to build properly.
 		//		I say "seems" because the debugger does some strange things and I cannot step into
