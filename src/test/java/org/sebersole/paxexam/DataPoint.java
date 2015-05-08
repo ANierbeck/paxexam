@@ -11,11 +11,7 @@ import org.hibernate.annotations.GenericGenerator;
  */
 @Entity
 public class DataPoint {
-	@Id
-	@GeneratedValue( generator = "increment" )
-	@GenericGenerator( name = "increment", strategy = "increment" )
-	private long id;
-
+	private Integer id;
 	private String name;
 
 	public DataPoint() {
@@ -25,11 +21,14 @@ public class DataPoint {
 		this.name = name;
 	}
 
-	public long getId() {
+	@Id
+	@GeneratedValue( generator = "increment" )
+	@GenericGenerator( name = "increment", strategy = "increment" )
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
