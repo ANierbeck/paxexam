@@ -79,7 +79,7 @@ dependencies {
 
 	karafDistro "org.apache.karaf:apache-karaf:${karafVersion}@tar.gz"
 
-	testRuntime( "org.apache.karaf:apache-karaf:${karafVersion}" ) {
+	testCompile( "org.apache.karaf:apache-karaf:${karafVersion}" ) {
 		// having trouble finding this one locally
 		exclude group: 'org.eclipse', module: 'org.eclipse.osgi'
 	}
