@@ -56,12 +56,12 @@ dependencies {
     //      is there ever a pax exam test that *does not* use this?
 	testCompile 'javax.inject:javax.inject:1'
 
+	karafDistro "org.apache.karaf:apache-karaf:${karafVersion}@tar.gz"
 	testCompile( "org.apache.karaf:apache-karaf:${karafVersion}" ) {
 		// having trouble finding this one locally
 		exclude group: 'org.eclipse', module: 'org.eclipse.osgi'
 	}
 
-	karafDistro "org.apache.karaf:apache-karaf:${karafVersion}@tar.gz"
 
 
     // Starting the Karaf container needs this.  Again, no idea why this would not be a

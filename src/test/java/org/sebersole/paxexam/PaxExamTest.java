@@ -1,5 +1,12 @@
 package org.sebersole.paxexam;
 
+import static org.junit.Assert.*;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.repositories;
+import static org.ops4j.pax.exam.CoreOptions.repository;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.karafDistributionConfiguration;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
@@ -10,29 +17,15 @@ import org.apache.karaf.features.BootFinished;
 import org.apache.karaf.features.FeaturesService;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
-
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.repositories;
-import static org.ops4j.pax.exam.CoreOptions.repository;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.karafDistributionConfiguration;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 /**
  * @author Steve Ebersole
@@ -52,23 +45,14 @@ public class PaxExamTest {
 						.name( "Apache Karaf" )
 						.unpackDirectory( new File( paxExamEnvironment.getProperty( "org.ops4j.pax.exam.container.karaf.unpackDir" ) ) )
 						.useDeployFolder( false )
-//				,debugConfiguration( "5005", true )
-
 				, repositories(
 						repository( "https://repository.jboss.org/nexus/content/groups/public-jboss/" )
 								.id( "jboss-nexus" )
 								.allowSnapshots()
 				)
-//				, features( featureXmlUrl(), "hibernate-native", "hibernate-jpa" )
 				, features( featureXmlUrl(), "hibernate-native" )
 				, features( testingFeatureXmlUrl(), "hibernate-osgi-testing" )
 		);
-	}
-	
-	private static Properties loadPaxExamEnvironmentProperties() throws IOException {
-		Properties props = new Properties();
-		props.load( PaxExamTest.class.getResourceAsStream( "/pax-exam-environment.properties" ) );
-		return props;
 	}
 
 	private static String featureXmlUrl() {
@@ -84,50 +68,24 @@ public class PaxExamTest {
 	}
 
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Prepare the PaxExam probe (the bundle to deploy)
-
-	// Note : I found locally that this part is not needed.  But I am leaving this here as I might
-	// 		someday have a need for tweaking the probe and I want to remember how it is done...
-//
-//	@ProbeBuilder
-//	public TestProbeBuilder probeConfiguration(TestProbeBuilder probe) {
-//		System.out.println( "Configuring probe..." );
-//
-////		// attempt to override PaxExam's default of dynamically importing everything
-////		probe.setHeader( Constants.DYNAMICIMPORT_PACKAGE, "" );
-//		// and use defined imports instead
-//		probe.setHeader(
-//				Constants.IMPORT_PACKAGE,
-//				"javassist.util.proxy"
-//						+ ",javax.persistence"
-//						+ ",javax.persistence.spi"
-//						+ ",org.h2"
-//						+ ",org.osgi.framework"
-//						+ ",org.hibernate"
-////						+ ",org.hibernate.boot.model"
-////						+ ",org.hibernate.boot.registry.selector"
-////						+ ",org.hibernate.boot.registry.selector.spi"
-////						+ ",org.hibernate.cfg"
-////						+ ",org.hibernate.engine.spi"
-////						+ ",org.hibernate.integrator.spi"
-////						+ ",org.hibernate.proxy"
-////						+ ",org.hibernate.service"
-////						+ ",org.hibernate.service.spi"
-////						+ ",org.ops4j.pax.exam.options"
-////						+ ",org.ops4j.pax.exam"
-//		);
-////		probe.setHeader( Constants.BUNDLE_ACTIVATOR, "org.hibernate.osgi.test.client.OsgiTestActivator" );
-//		return probe;
-//	}
-
 
 	@Inject
 	@SuppressWarnings("UnusedDeclaration")
 	private BundleContext bundleContext;
 	
+	@Inject
+	protected FeaturesService featuresService;
+
+	@Inject
+	BootFinished bootFinished;
+
+	
 	@Test
-//	@Ignore
+	public void testFeature() throws Exception {
+		assertTrue(featuresService.isInstalled(featuresService.getFeature("hibernate-native")));
+	}
+
+	@Test
 	public void testNative() throws Exception {
 		final ServiceReference sr = bundleContext.getServiceReference( SessionFactory.class.getName() );
 		final SessionFactory sf = (SessionFactory) bundleContext.getService( sr );
